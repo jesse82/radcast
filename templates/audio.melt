@@ -1,0 +1,20 @@
+colour:black
+out=30
+{{ video_file }}
+in={{ in_frame }}
+out={{ out_frame }}
+-attach-clip
+volume
+normalise=-14dB
+max_gain=25dB
+window=120
+-mix
+24
+-mixer
+luma
+colour:black
+out=30
+-mix
+24
+-mixer
+luma
