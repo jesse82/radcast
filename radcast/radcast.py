@@ -1,5 +1,7 @@
 #/usr/bin/env python2.7
 
+"""radcast.py: main functionality of radcast"""
+
 import subprocess
 import os
 import time
@@ -9,17 +11,25 @@ import vimeo
 
 # Requires jinja2, pyvimeo
 
-__author__ = "Josh Wheeler"
 __copyright__ = "Copyright 2007, Josh Wheeler"
-__license__ = "MIT"
-__maintainer__ = "Josh Wheeler"
-__email__ = "mantlepro@gmail.com"
+__license__ = "GPL"
 __status__ = "Development"
 
-# open the clip
-# choose in/out
-# preview beginning and ending for a quick quality check
-# hit the GO button
+#    radcast: radical podcast automation
+#    Copyright (C) 2017 Josh Wheeler
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 VIMEO_CLIENT_ID = '1a891bcce93f182903566f9757351c3a3d639788'
 VIMEO_CLIENT_SECRET = 'nb8zjvrTjdjNhmBmfm9ObyovztYJd6TQBH01W4CweCHwebyElloUX6JOdCd8iz8xk1H0czC/cPajoMbfm3Cxh/jOBzHczk7SOlhbbN/sPgcje3vZ143a+Km/g8SRsSs4'
