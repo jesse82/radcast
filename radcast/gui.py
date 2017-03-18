@@ -25,6 +25,47 @@ __status__ = "Development"
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+class InfoFrame(Frame):
+    """Collect info needed for podcast"""
+
+    def __init__(self, parent):
+
+        Frame.__init__(self, parent)
+
+        self.info_frame = Frame(root)
+        self.info_frame.pack(padx=20, pady=20)
+
+        self.button_frame = Frame(root)
+        self.button_frame.pack()
+
+        # title
+        Label(self.info_frame, text="Title", anchor=W).grid(row=0, sticky=W)
+        self.title = Entry(self.info_frame, width=70)
+        self.title.grid(row=1, pady=(4,10), sticky=W)
+
+        # description
+        Label(self.info_frame, text="Description", anchor=W).grid(row=3, sticky=W)
+        self.description = Text(self.info_frame, height=7, wrap=WORD)
+        self.description.grid(row=4, pady=(4,10), sticky=W)
+
+        self.GO = Button(self.button_frame, text="Upload Podcast", command=self.go)
+        self.GO.pack({"side": "left"})
+
+        self.QUIT = Button(self.button_frame)
+        self.QUIT["text"] = "Quit",
+        self.QUIT["command"] = self.quit
+        self.QUIT.pack({"side": "right"})
+
+    def go(self):
+        # TODO Validate user input
+
+        title = self.title.get().strip()
+        description = self.description.get(1.0, END).strip()
+
+        if self.title and self.description:
+            print("%s\n%s" % (self.title, self.description))
+
+
 class Application(Frame):
     """Allows the user to set up podcast, choose an in/out point and upload"""
 
@@ -65,44 +106,11 @@ class Application(Frame):
         menu.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About...", command=self.about)
 
-    def go(self):
-        # TODO Validate user input
-
-        title = self.title.get().strip()
-        description = self.description.get(1.0, END).strip()
-
-        if title and description:
-            print("%s\n%s" % (title, description))
-
-    def validate(self, P):
-            self.submit.config(state=(NORMAL if P else DISABLED))
-            return True
-
     def create_widgets(self):
+        self.info_frame = InfoFrame(root)
 
-        info_frame = Frame(root)
-        info_frame.pack(padx=20, pady=20)
 
-        button_frame = Frame(root)
-        button_frame.pack()
 
-        # title
-        Label(info_frame, text="Title", anchor=W).grid(row=0, sticky=W)
-        self.title = Entry(info_frame, width=70)
-        self.title.grid(row=1, pady=(4,10), sticky=W)
-
-        # description
-        Label(info_frame, text="Description", anchor=W).grid(row=3, sticky=W)
-        self.description = Text(info_frame, height=7, wrap=WORD)
-        self.description.grid(row=4, pady=(4,10), sticky=W)
-
-        self.GO = Button(button_frame, text="Upload Podcast", command=self.go)
-        self.GO.pack({"side": "left"})
-
-        self.QUIT = Button(button_frame)
-        self.QUIT["text"] = "Quit",
-        self.QUIT["command"] = self.quit
-        self.QUIT.pack({"side": "right"})
 
 root = Tk()
 app = Application(master=root)
