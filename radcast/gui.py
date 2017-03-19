@@ -357,9 +357,8 @@ class Application(Frame):
         ]
 
         try:
-            # filename = askopenfilename(filetypes=FILETYPES)
-            filename = "/tmp/a.mp4"
-            # move to status bar in a later version
+            filename = askopenfilename(filetypes=FILETYPES)
+            # filename = "/tmp/a.mp4"  # for debugging
         except TypeError, e:
             logging.error("Either the wrong filetype was chosen or no file was.")
 
