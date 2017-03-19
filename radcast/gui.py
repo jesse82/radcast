@@ -83,7 +83,7 @@ class Settings:
 
         except:
 
-            print "Something went wrong in the settings"
+            print "No settings file detected."
 
         # set dependent variables
         self.still_frames = self.still_seconds * self.frame_rate
@@ -202,32 +202,10 @@ player = Player()
 class MainFrame(Frame):
     """Collect info needed for podcast"""
 
-    def keypress(self, event):
-
-        key = event.keysym
-        if key == 'Left':
-            player.jog(-1)
-        if key == 'Right':
-            player.jog(+1)
-        if event == repr('<Shift-Right>'):
-            player.jog(+10)
-        if key == 'i':
-            self.set_in()
-        if key == 'o':
-            self.set_out()
-        if key == 'space':
-            player.toggle_play_pause()
-        if key == 'Home':
-            player.seek_frame(0)
-        if key == 'End':
-            player.seek_frame(player.length())
-        print repr(event.keysym)
-
     def __init__(self, parent):
         global filename
         Frame.__init__(self, parent)
         root.bind_class("Text", "<Control-a>", self.selectall)
-        root.bind("<Key>", self.keypress)
         self.in_frame = 0
         self.out_frame = 0
 
@@ -255,8 +233,8 @@ class MainFrame(Frame):
 
             player.load_file(filename)
 
-            self.preview_in_button = Button(self.player_frame, text="Preview IN")
-            self.preview_out_button = Button(self.player_frame, text="Preview OUT")
+            self.preview_in_button = Button(self.player_frame, text="Preview IN", command=self.preview_in)
+            self.preview_out_button = Button(self.player_frame, text="Preview OUT", command=self.preview_out)
 
             file_label.pack(side=TOP)
 
@@ -300,11 +278,22 @@ class MainFrame(Frame):
         self.in_frame = player.get_frame()
         self.in_label.config(text="(%s)" % self.in_frame)
         print("Set in frame to %s" % self.in_frame)
+        app.player_frame.focus_set()
 
     def set_out(self):
         self.out_frame = player.get_frame()
         self.out_label.config(text="(%s)" % self.out_frame)
         print("Set out frame %s" % self.out_frame)
+        app.player_frame.focus_set()
+
+    def preview_in(self):
+        player.seek_frame(self.in_frame)
+        player.play()
+
+    def preview_out(self):
+        player.seek_frame(self.out_frame - 120)
+        player.producer.set_in_and_out(self.in_frame, self.out_frame)
+        player.play()
 
     def selectall(self, event):
         event.widget.tag_add("sel","1.0","end")
@@ -377,16 +366,53 @@ class Application(Frame):
     def player_frame(self):
         self.player_frame = Frame(root, width=650, height=400)
         self.player_frame.pack()
+        self.player_frame.bind("<Shift-Right>", player.jog(+10))
+        self.player_frame.bind("<Key>", self.keypress)
+        self.player_frame.focus_set()
 
         # make a home for the SDL window
-        env = os.environ['SDL_WINDOWID'] = str(self.player_frame.winfo_id())
-        print env
+        os.environ['SDL_WINDOWID'] = str(self.player_frame.winfo_id())
 
         # update root so consumer can connect
         root.update()
 
         # start the consumer in the SDL frame
         player.consumer.start()
+
+    def keypress(self, event):
+
+        key = event.keysym
+        if "1" <= key <= "9":
+            length = player.length()
+            percent = int(key) * .100
+            seek = int(length * percent)
+            player.seek_frame(seek)
+        if key == 'Left':
+            player.jog(-1)
+        if key == 'Right':
+            player.jog(+1)
+        if key == '<Shift-Right>' or key == 'Up':
+            player.jog(+10)
+        if key == '<Shift-Left>' or key == 'Down':
+            player.jog(-10)
+        if key == 'l':
+            player.shuttle_forward()
+        if key == 'k':
+            player.toggle_play_pause()
+        if key == 'j':
+            player.shuttle_reverse()
+        if key == 'i':
+            main_frame.set_in()
+        if key == 'o':
+            main_frame.set_out()
+        if key == 'space':
+            player.toggle_play_pause()
+        if key == 'Home':
+            player.seek_frame(0)
+        if key == 'End':
+            player.seek_frame(player.length())
+        print repr(event.keysym)
+
 
 
 
