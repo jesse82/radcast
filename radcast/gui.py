@@ -2,13 +2,12 @@
 
 """gui.py: graphical user interface to radcast"""
 
-import Tkinter as tk
-from tkFileDialog import askopenfilename
-import ttk
-from radcast import logging
-import mlt
 import os
-import yaml
+import Tkinter as tk
+import ttk
+from tkFileDialog import askopenfilename
+from radcast import logging
+from mlt_player import player
 
 __copyright__ = "Copyright 2007, Josh Wheeler"
 __license__ = "GPL"
@@ -31,176 +30,6 @@ __status__ = "Development"
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 filename = "Choose a file"
-
-
-class Settings:
-
-    """Project settings, and preferences"""
-
-    def __init__(self):
-
-        try:  # if current directory exists
-            self.project_dir = os.getcwd()
-        except OSError:  # if not, go back a directory and try again
-            os.chdir("..")
-            self.project_dir = os.getcwd()
-
-        # set initial values
-        self.title = "UNTITLED"
-        self.profile = "atsc_720p_2997"
-        self.media_dir = None
-        self.frame_rate = 30
-        self.drop_frame = True
-        self.jog_skip_frames = 8
-        self.still_seconds = 6
-        self.transition_length = int(self.frame_rate)
-        self.pre_roll = int(self.frame_rate)
-
-        try:  # if settings file exists in current dir, read into cfg
-
-            with open(self.project_dir + "/settings.yml", 'r') as ymlfile:
-                cfg = yaml.safe_load(ymlfile)
-
-                # TODO deserialize implicitly instead of explicitly
-
-                self.title = cfg.get('title', self.title)
-                self.project_dir = cfg.get('project_dir', self.project_dir)
-                self.media_dir = cfg.get('media_dir', self.media_dir)
-                self.profile = cfg.get('profile', self.profile)
-                self.frame_rate = cfg.get('frame_rate', self.frame_rate)
-                self.pre_roll = int(cfg.get('pre_roll', self.pre_roll))
-                self.drop_frame = cfg.get('drop_frame', self.drop_frame)
-                self.jog_skip_frames = cfg.get('jog_skip_frames', self.jog_skip_frames)
-                self.still_seconds = cfg.get('still_seconds', self.still_seconds)
-                self.transition_length = int(cfg.get('transition_length', self.transition_length))
-
-        except yaml.YAMLError, e:
-
-            if hasattr(e, 'problem_mark'):
-                mark = e.problem_mark
-                print("Error in settings file: (line %s, column %s)" % (
-                    mark.line + 1, mark.column + 1)
-                )
-
-        except:
-
-            print "No settings file detected."
-
-        # set dependent variables
-        self.still_frames = self.still_seconds * self.frame_rate
-        self.mlt_profile = mlt.Profile(self.profile)
-
-settings = Settings()
-
-
-class Player:
-
-    """MLT player https://www.mltframework.org/docs/framework/"""
-
-    def __init__(self):
-
-        self.current_clip = "NULL"
-
-        # initialize mlt
-        mlt.Factory().init()
-
-        # initialize producer with NULL if no current_clip is available
-        self.producer = mlt.Producer(settings.mlt_profile, self.current_clip)
-
-        # initialize and start consumer
-        self.consumer = mlt.Consumer(settings.mlt_profile, "sdl")
-        self.consumer.set("rescale", "bicubic")
-        self.consumer.set("resize", 1)
-        self.consumer.set("real_time", 1)
-        self.consumer.set("progressive", 1)
-        self.connect_producer()
-
-    def connect_producer(self):
-        self.consumer.purge()
-        self.producer.set_speed(0)
-        self.consumer.connect(self.producer)
-        #self.consumer.start()
-
-    def stop(self):
-        self.producer.set_speed(0)
-
-    def pause(self):
-        self.producer.set_speed(0)
-
-    def play(self):
-        self.producer.set_speed(1)
-
-    def reverse(self):
-        self.producer.set_speed(-1)
-
-    def shuttle_forward(self):
-        speed = self.producer.get_speed()
-        if speed < 1:
-            self.producer.set_speed(1)
-        elif speed == 1:
-            self.producer.set_speed(2)
-        elif speed == 2:
-            self.producer.set_speed(5)
-        elif speed == 5:
-            self.producer.set_speed(10)
-
-    def shuttle_reverse(self):
-        speed = self.producer.get_speed()
-        if speed >= 0:
-            self.producer.set_speed(-1)
-        elif speed == -1:
-            self.producer.set_speed(-2)
-        elif speed == -2:
-            self.producer.set_speed(-5)
-        elif speed == -5:
-            self.producer.set_speed(-10)
-
-    def jog(self, amount):
-        """Jog forward or reverse by negative or positive amount"""
-        # pause playback if not paused already
-        self.producer.set_speed(0)
-        frame = self.producer.frame()
-        self.producer.seek(frame + amount)
-
-    def get_frame(self):
-        return self.producer.frame()
-
-    def length(self):
-        return self.producer.get_length()
-
-    def seek_frame(self, frame):
-        length = self.length()
-        if frame < 0:
-            frame = 0
-        elif frame >= length:
-            frame = length - 1
-        self.producer.seek(frame)
-
-    def end(self):
-        length = self.length()
-        last_frame = length - 1
-        self.seek_frame(last_frame)
-
-    def load_file(self, path):
-        self.producer = mlt.Producer(settings.mlt_profile, path)
-        self.connect_producer()
-        self.current_clip = path
-
-    def is_stopped(self):
-        if self.producer.get_speed() == 0:
-            return True
-
-    def is_playing(self):
-        if self.producer.get_speed() != 0:
-            return True
-
-    def toggle_play_pause(self):
-        if self.is_stopped():
-            self.producer.set_speed(1)
-        else:
-            self.producer.set_speed(0)
-
-player = Player()
 
 
 class MainFrame(tk.Frame):
@@ -434,7 +263,6 @@ class Application(tk.Frame):
         main_frame.current_frame["text"] = frame
         if player.is_playing() and frame < main_frame.maxlength:
             self.after(100, self.update_progress_bar)
-
 
     def keypress(self, event):
 

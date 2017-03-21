@@ -9,8 +9,6 @@ import jinja2
 import logging
 import vimeo
 
-# Requires jinja2, pyvimeo
-
 __copyright__ = "Copyright 2007, Josh Wheeler"
 __license__ = "GPL"
 __status__ = "Development"
@@ -35,11 +33,23 @@ VIMEO_CLIENT_ID = '1a891bcce93f182903566f9757351c3a3d639788'
 VIMEO_CLIENT_SECRET = 'nb8zjvrTjdjNhmBmfm9ObyovztYJd6TQBH01W4CweCHwebyElloUX6JOdCd8iz8xk1H0czC/cPajoMbfm3Cxh/jOBzHczk7SOlhbbN/sPgcje3vZ143a+Km/g8SRsSs4'
 VIMEO_ACCESS_TOKEN = '48b5af17781ec2cd705b7cc4d07d9a38'
 
+cwd = os.getcwd()
+
 v = vimeo.VimeoClient(
     token=VIMEO_ACCESS_TOKEN,
     key=VIMEO_CLIENT_ID,
     secret=VIMEO_CLIENT_SECRET
 )
+
+# set up logging
+logging.basicConfig(
+    filename='radcast.log',
+    format='%(levelname)s: %(message)s',
+    filemode="w",
+    level=logging.DEBUG
+)
+
+logging.info("Started %s" % time.strftime("%a, %d %b %Y %T %Z"))
 
 
 def generate_melt(video_file, in_frame, out_frame):
@@ -67,19 +77,6 @@ def generate_melt(video_file, in_frame, out_frame):
     finally:
         logging.error("Reached cleanup stage of generate_melt.")
         mlt_file.close()
-
-
-cwd = os.getcwd()
-
-# set up logging
-logging.basicConfig(
-    filename='radcast.log',
-    format='%(levelname)s: %(message)s',
-    filemode="w",
-    level=logging.DEBUG
-)
-
-logging.info("Started %s" % time.strftime("%a, %d %b %Y %T %Z"))
 
 
 def encode_video(file):
