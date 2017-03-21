@@ -2,7 +2,7 @@
 
 """gui.py: graphical user interface to radcast"""
 
-from Tkinter import *
+import Tkinter as tk
 from tkFileDialog import askopenfilename
 import ttk
 from radcast import logging
@@ -203,21 +203,27 @@ class Player:
 player = Player()
 
 
-class MainFrame(Frame):
+class MainFrame(tk.Frame):
     """Collect info needed for podcast"""
 
     def __init__(self, parent):
         global filename
-        Frame.__init__(self, parent)
-        root.bind_class("Text", "<Control-a>", self.selectall)
-        root.bind_class("Text", "<Tab>", app.player_frame.focus_set)
+        tk.Frame.__init__(self, parent)
         self.in_frame = 0
         self.out_frame = 0
 
+        # Need to rework bindings to make the following work
+        # root.bind("<Alt-i>", self.preview_in())
+        # root.bind("<Alt-o>", self.preview_out())
+
+        root.bind_class("Text", "<Control-a>", self.select_all)
+        root.bind_class("Text", "<Tab>", self.set_focus)
+        root.bind_class("Button", "<space>", self.toggle_play_pause)
+
         # create inner frames
-        self.player_frame = Frame(root)
-        self.main_frame = Frame(root)
-        self.button_frame = Frame(root)
+        self.player_frame = tk.Frame(root)
+        self.main_frame = tk.Frame(root)
+        self.button_frame = tk.Frame(root)
 
         # pack frames
         self.player_frame.pack()
@@ -227,18 +233,20 @@ class MainFrame(Frame):
         # validation goodness
         vcmd = parent.register(self.validate)
 
-        status_bar = Label(root, bd=1, relief=SUNKEN, anchor=W)
-        status_bar.pack(side=BOTTOM, fill=X)
+        status_bar = tk.Label(root, bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         if filename:
             status_bar["text"] = "File: %s" % filename
 
+            self.current_frame = tk.Label(self.player_frame)
+            self.current_frame.pack(side=tk.TOP)
 
-            self.in_button = Button(self.player_frame, text="Set IN", command=self.set_in)
-            self.in_label = Label(self.player_frame, text="(0)")
+            self.in_button = tk.Button(self.player_frame, text="Set IN", command=self.set_in)
+            self.in_label = tk.Label(self.player_frame, text="(0)")
 
-            self.out_button = Button(self.player_frame, text="Set OUT", command=self.set_out)
-            self.out_label = Label(self.player_frame, text="(0)")
+            self.out_button = tk.Button(self.player_frame, text="Set OUT", command=self.set_out)
+            self.out_label = tk.Label(self.player_frame, text="(0)")
 
             player.load_file(filename)
 
@@ -246,42 +254,46 @@ class MainFrame(Frame):
             self.maxlength = player.length() - 1
             app.progressbar["maximum"] = self.maxlength
 
-            self.preview_in_button = Button(self.player_frame, text="Preview IN", command=self.preview_in)
-            self.preview_out_button = Button(self.player_frame, text="Preview OUT", command=self.preview_out)
+            self.preview_in_button = tk.Button(self.player_frame, text="Preview IN", command=self.preview_in)
+            self.preview_in_button["takefocus"] = tk.FALSE
+            # self.preview_in_button["underline"] = 8
 
+            self.preview_out_button = tk.Button(self.player_frame, text="Preview OUT", command=self.preview_out)
+            self.preview_out_button["takefocus"] = tk.FALSE
+            # self.preview_out_button["underline"] = 8
 
-            self.in_button.pack(side=LEFT)
-            self.out_button.pack(side=RIGHT)
+            self.in_button.pack(side=tk.LEFT)
+            self.out_button.pack(side=tk.RIGHT)
 
-            self.in_label.pack(side=LEFT)
-            self.out_label.pack(side=RIGHT)
+            self.in_label.pack(side=tk.LEFT)
+            self.out_label.pack(side=tk.RIGHT)
 
-            self.preview_in_button.pack(side=LEFT)
-            self.preview_out_button.pack(side=RIGHT)
+            self.preview_in_button.pack(side=tk.LEFT)
+            self.preview_out_button.pack(side=tk.RIGHT)
 
         else:
             app.open_file()
 
         # title
-        Label(self.main_frame, text="Title", anchor=W).grid(row=1, sticky=W)
-        self.title = Entry(self.main_frame, width=70, validate='key', validatecommand=(vcmd, '%P'))
-        self.title.grid(row=2, pady=(4, 10), sticky=W)
+        tk.Label(self.main_frame, text="Title", anchor=tk.W).grid(row=1, sticky=tk.W)
+        self.title = tk.Entry(self.main_frame, width=70, validate='key', validatecommand=(vcmd, '%P'))
+        self.title.grid(row=2, pady=(4, 10), sticky=tk.W)
 
         # description
-        Label(self.main_frame, text="Description", anchor=W).grid(row=3, sticky=W)
-        self.description = Text(self.main_frame, height=7, wrap=WORD)
+        tk.Label(self.main_frame, text="Description", anchor=tk.W).grid(row=3, sticky=tk.W)
+        self.description = tk.Text(self.main_frame, height=7, wrap=tk.WORD)
         self.description.bind("<KeyRelease>", self.validate)
-        self.description.grid(row=4, pady=(4,10), sticky=W)
+        self.description.grid(row=4, pady=(4,10), sticky=tk.W)
 
         # buttons
-        self.GO = Button(self.button_frame,
-                         text="Upload Podcast",
-                         command=self.go,
-                         state=DISABLED)
+        self.GO = tk.Button(self.button_frame,
+                            text="Upload Podcast",
+                            command=self.go,
+                            state=tk.DISABLED)
 
         self.GO.pack({"side": "left"})
 
-        self.QUIT = Button(self.button_frame)
+        self.QUIT = tk.Button(self.button_frame)
         self.QUIT["text"] = "Quit",
         self.QUIT["command"] = self.quit
         self.QUIT.pack({"side": "right"})
@@ -301,32 +313,48 @@ class MainFrame(Frame):
     def preview_in(self):
         player.seek_frame(self.in_frame)
         player.play()
+        app.update_progress_bar()
 
     def preview_out(self):
-        player.seek_frame(self.out_frame - 120)
+        seek = self.out_frame - 120
+        print self.out_frame
+        if seek > 0:
+            player.seek_frame(seek)
         player.producer.set_in_and_out(self.in_frame, self.out_frame)
         player.play()
+        app.update_progress_bar()
+        # need to clear in and out here
+        # player.producer.set_in_and_out(-1, -1)
 
-    def selectall(self, event):
+    def select_all(self, event):
         event.widget.tag_add("sel","1.0","end")
+
+    def toggle_play_pause(self, event):
+        player.toggle_play_pause()
+        app.update_progress_bar()
+
+    def set_focus(self, event):
+        app.player_frame.focus_set
 
     def validate(self, P):
         """Insure user input is as correct as this model can be"""
         title = self.title.get().strip()
-        description = self.description.get(1.0, END).strip()
-        self.GO.config(state=(NORMAL if title and description else DISABLED))
+        description = self.description.get(1.0, tk.END).strip()
+        if title and description:
+            self.GO["state"] = tk.NORMAL
         return True
 
     def go(self):
         """Run radcast commands"""
-
-        title = self.title.get().strip()
-        description = self.description.get(1.0, END).strip()
-
-        if self.title and self.description:
+        if self.in_frame <= self.out_frame:
+            print "Set in and out"
+        else:
+            title = self.title.get().strip()
+            description = self.description.get(1.0, tk.END).strip()
             print("%s\n%s" % (title, description))
 
-class Application(Frame):
+
+class Application(tk.Frame):
     """Allows the user to set up podcast, choose an in/out point and upload"""
 
     # open the clip
@@ -335,7 +363,7 @@ class Application(Frame):
     # hit the GO button
 
     def __init__(self, master=None):
-        Frame.__init__(self, master)
+        tk.Frame.__init__(self, master)
         self.pack()
         self.create_menu()
         self.open_file()
@@ -347,16 +375,16 @@ class Application(Frame):
     def create_menu(self):
         """Create File and Help menus and their actions"""
 
-        menu = Menu(root)
+        menu = tk.Menu(root)
         root.config(menu=menu)
 
-        file_menu = Menu(menu)
+        file_menu = tk.Menu(menu)
         menu.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open...", command=self.open_file)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit, accelerator='Ctrl+Q')
 
-        help_menu = Menu(menu)
+        help_menu = tk.Menu(menu)
         menu.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About...", command=self.about)
 
@@ -369,13 +397,13 @@ class Application(Frame):
         ]
 
         try:
-            filename = askopenfilename(filetypes=FILETYPES)
-            # filename = "/tmp/a.mp4"  # for debugging
+            # filename = askopenfilename(filetypes=FILETYPES)
+            filename = "/tmp/a.mp4"  # for debugging
         except TypeError, e:
             logging.error("Either the wrong filetype was chosen or no file was.")
 
     def player_frame(self):
-        self.player_frame = Frame(root, width=650, height=400)
+        self.player_frame = tk.Frame(root, width=650, height=400)
         self.player_frame.pack()
         self.player_frame.bind("<Shift-Right>", player.jog(+10))
         self.player_frame.bind("<Key>", self.keypress)
@@ -387,7 +415,7 @@ class Application(Frame):
         self.progressbar["value"] = 0
 
         # set up scale for scrubbing through player
-        s = ttk.Scale(root, orient=HORIZONTAL, length=650, from_=1.0, to=100.0)
+        s = ttk.Scale(root, orient=tk.HORIZONTAL, length=650, from_=1.0, to=100.0)
         s["from"] = 1.0
         s["to"] = 100
 
@@ -403,6 +431,7 @@ class Application(Frame):
     def update_progress_bar(self):
         frame = player.get_frame()
         self.progressbar["value"] = frame
+        main_frame.current_frame["text"] = frame
         if player.is_playing() and frame < main_frame.maxlength:
             self.after(100, self.update_progress_bar)
 
@@ -440,14 +469,13 @@ class Application(Frame):
         if key == 'End':
             player.seek_frame(player.length())
 
-        if player.is_playing():
-            self.update_progress_bar()
+        self.update_progress_bar()
 
         print repr(event.keysym)
         self.progressbar["value"] = player.get_frame()
 
 
-root = Tk()
+root = tk.Tk()
 
 app = Application(master=root)
 main_frame = MainFrame(root)
@@ -455,5 +483,9 @@ main_frame = MainFrame(root)
 # key bindings
 root.bind('<Control-q>', quit)
 
+# invoke the button on the return key
+root.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+
 app.mainloop()
 root.destroy()
+player.consumer.stop()
