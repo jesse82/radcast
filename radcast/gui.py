@@ -5,7 +5,7 @@
 import os
 import Tkinter as tk
 import ttk
-from tkFileDialog import askopenfilename
+import tkFileDialog
 from radcast import logging
 from mlt_player import player
 
@@ -90,9 +90,9 @@ class PlayerFrame(tk.Frame):
         if key == 'j':
             player.shuttle_reverse()
         if key == 'i':
-            self.parent.set_in()
+            self.in_out_frame.set_in()
         if key == 'o':
-            self.parent.set_out()
+            self.in_out_frame.set_out()
         if key == 'space':
             player.toggle_play_pause()
         if key == 'Home':
@@ -135,32 +135,31 @@ class InOutFrame(tk.Frame):
         self.preview_out_button.pack(side=tk.RIGHT)
 
     def set_in(self):
-        self.in_frame = player.get_frame()
-        self.in_label.config(text="(%s)" % self.in_frame)
-        print("Set in frame to %s" % self.in_frame)
-        #self.focus_set()
+        clip.in_frame = player.get_frame()
+        self.in_label.config(text="(%s)" % clip.in_frame)
+        print("Set in frame to %s" % clip.in_frame)
+        # self.focus_set()
 
     def set_out(self):
-        self.out_frame = player.get_frame()
-        self.out_label.config(text="(%s)" % self.out_frame)
-        print("Set out frame %s" % self.out_frame)
-        #self.focus_set()
+        clip.out_frame = player.get_frame()
+        self.out_label.config(text="(%s)" % clip.out_frame)
+        print("Set out frame %s" % clip.out_frame)
+        # self.focus_set()
 
     def preview_in(self):
-        player.seek_frame(self.in_frame)
+        player.seek_frame(clip.in_frame)
         player.play()
         self.parent.update_progress_bar()
 
     def preview_out(self):
-        seek = self.out_frame - 120
-        print self.out_frame
+        seek = clip.out_frame - 120
+        print clip.out_frame
         if seek > 0:
             player.seek_frame(seek)
-        player.producer.set_in_and_out(self.in_frame, self.out_frame)
+        player.producer.set_in_and_out(clip.in_frame, clip.out_frame)
         player.play()
+
         self.parent.update_progress_bar()
-        # need to clear in and out here
-        # player.producer.set_in_and_out(-1, -1)
 
 
 class TextInputFrame(tk.Frame):
@@ -189,7 +188,7 @@ class TextInputFrame(tk.Frame):
         title = self.title.get().strip()
         description = self.description.get(1.0, tk.END).strip()
         if title and description:
-            self.GO["state"] = tk.NORMAL
+            self.parent.GO["state"] = tk.NORMAL
         return True
 
     # events
@@ -207,8 +206,6 @@ class MainFrame(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
-        self.in_frame = 0
-        self.out_frame = 0
 
         self.bind_class("Button", "<space>", self.toggle_play_pause)
 
@@ -233,12 +230,11 @@ class MainFrame(tk.Frame):
         """Load file into player"""
         self.parent.open_file()
 
-        if self.parent.filename:
-            print(self.parent.filename)
-            #self.parent.statusbar["text"] = "File: %s" % filename
+        if clip.filename:
+            self.parent.statusbar["text"] = "File: %s" % clip.filename
 
             # load the file into the player
-            player.load_file(self.parent.filename)
+            player.load_file(clip.filename)
 
             # start the consumer in the SDL frame
             player.consumer.start()
@@ -267,7 +263,7 @@ class MainFrame(tk.Frame):
 
     def go(self):
         """Run radcast commands"""
-        if self.in_frame <= self.out_frame:
+        if clip.in_frame <= clip.out_frame:
             print "Set in and out"
         else:
             title = self.title.get().strip()
@@ -314,18 +310,27 @@ class StatusBar(tk.Label):
         self.parent = parent
 
 
+class Clip:
+    """Clip object to be edited"""
+    def __init__(self):
+        self.filename = ""
+        self.in_frame = 0
+        self.out_frame = 0
+
+clip = Clip()
+
+
 class Application(tk.Frame):
 
     """Set up podcast, choose an in/out point and upload"""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.filename = ""
 
         # instantiate gui components
+        self.statusbar = StatusBar(self)
         self.menu = MainMenu(self)
         self.main = MainFrame(self)
-        self.statusbar = StatusBar(self)
 
         # pack gui components
         self.main.pack(side="top", fill="both", expand=True)
@@ -339,7 +344,7 @@ class Application(tk.Frame):
         ]
 
         try:
-            self.filename = askopenfilename(filetypes=FILETYPES)
+            clip.filename = tkFileDialog.askopenfilename(filetypes=FILETYPES)
         except TypeError, e:
             logging.error("Error opening file")
 
