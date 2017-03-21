@@ -29,19 +29,22 @@ __status__ = "Development"
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-filename = "Choose a file"
-
 
 class PlayerFrame(tk.Frame):
+    """SDL player window with indicators and in and out buttons"""
     def __init__(self, parent, width, height):
         tk.Frame.__init__(self, parent, width=width, height=height)
         self.frame = tk.Frame(parent, width=width, height=height)
         self.parent = parent
 
-        self.bind("<Shift-Right>", player.jog(+10))
         self.bind("<Key>", self.keypress)
+        self.bind("<Shift-Right>", player.jog(+10))
+
         self.focus_set()
         self.frame.pack()
+
+        self.in_out_frame = InOutFrame(self)
+        self.in_out_frame.pack()
 
         # make a home for the SDL window
         os.environ['SDL_WINDOWID'] = str(self.frame.winfo_id())
@@ -54,16 +57,16 @@ class PlayerFrame(tk.Frame):
         self.progressbar["value"] = 0
         self.progressbar.pack()
 
-        # set max length of progress bar
-        self.maxlength = player.length() - 1
-        self.progressbar["maximum"] = self.maxlength
+        # add counter label below progress bar
+        self.counter_label = tk.Label(self)
+        self.counter_label.pack(side=tk.TOP)
 
     def update_progress_bar(self):
         i = player.get_frame()
         self.progressbar["value"] = i
-        self.parent.current_frame["text"] = i
+        self.counter_label["text"] = i
         if player.is_playing() and i < self.parent.maxlength:
-            self.after(100, self.update_progress_bar)
+            root.after(100, self.update_progress_bar)
 
     def keypress(self, event):
         key = event.keysym
@@ -87,9 +90,9 @@ class PlayerFrame(tk.Frame):
         if key == 'j':
             player.shuttle_reverse()
         if key == 'i':
-            main.set_in()
+            self.parent.set_in()
         if key == 'o':
-            main.set_out()
+            self.parent.set_out()
         if key == 'space':
             player.toggle_play_pause()
         if key == 'Home':
@@ -103,10 +106,67 @@ class PlayerFrame(tk.Frame):
         self.progressbar["value"] = player.get_frame()
 
 
+class InOutFrame(tk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+
+        self.in_button = tk.Button(self, text="Set IN", command=self.set_in)
+        self.in_label = tk.Label(self, text="(0)")
+
+        self.out_button = tk.Button(self, text="Set OUT", command=self.set_out)
+        self.out_label = tk.Label(self, text="(0)")
+
+        self.preview_in_button = tk.Button(self, text="Preview IN", command=self.preview_in)
+        self.preview_in_button["takefocus"] = tk.FALSE
+        # self.preview_in_button["underline"] = 8
+
+        self.preview_out_button = tk.Button(self, text="Preview OUT", command=self.preview_out)
+        self.preview_out_button["takefocus"] = tk.FALSE
+        # self.preview_out_button["underline"] = 8
+
+        self.in_button.pack(side=tk.LEFT)
+        self.out_button.pack(side=tk.RIGHT)
+
+        self.in_label.pack(side=tk.LEFT)
+        self.out_label.pack(side=tk.RIGHT)
+
+        self.preview_in_button.pack(side=tk.LEFT)
+        self.preview_out_button.pack(side=tk.RIGHT)
+
+    def set_in(self):
+        self.in_frame = player.get_frame()
+        self.in_label.config(text="(%s)" % self.in_frame)
+        print("Set in frame to %s" % self.in_frame)
+        #self.focus_set()
+
+    def set_out(self):
+        self.out_frame = player.get_frame()
+        self.out_label.config(text="(%s)" % self.out_frame)
+        print("Set out frame %s" % self.out_frame)
+        #self.focus_set()
+
+    def preview_in(self):
+        player.seek_frame(self.in_frame)
+        player.play()
+        self.parent.update_progress_bar()
+
+    def preview_out(self):
+        seek = self.out_frame - 120
+        print self.out_frame
+        if seek > 0:
+            player.seek_frame(seek)
+        player.producer.set_in_and_out(self.in_frame, self.out_frame)
+        player.play()
+        self.parent.update_progress_bar()
+        # need to clear in and out here
+        # player.producer.set_in_and_out(-1, -1)
+
+
 class TextInputFrame(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        global filename
+        self.parent = parent
         self.bind_class("Text", "<Control-a>", self.select_all)
         self.bind_class("Text", "<Tab>", self.set_focus)
 
@@ -145,7 +205,6 @@ class MainFrame(tk.Frame):
     """Collect info needed for podcast"""
 
     def __init__(self, parent, *args, **kwargs):
-        global filename
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.in_frame = 0
@@ -159,51 +218,35 @@ class MainFrame(tk.Frame):
 
         # create frames within main frame
         self.player_frame = PlayerFrame(self, width=650, height=400)
-        self.button_frame = tk.Frame(self)
         self.text_input = TextInputFrame(self)
+        self.button_frame = tk.Frame(self)
 
         # pack frames
         self.player_frame.pack()
         self.text_input.pack()
         self.button_frame.pack()
 
-        if filename:
-            print(filename)
-            # self.parent.statusbar["text"] = "File: %s" % filename
+        # load file into player
+        self.load_file()
+
+    def load_file(self):
+        """Load file into player"""
+        self.parent.open_file()
+
+        if self.parent.filename:
+            print(self.parent.filename)
+            #self.parent.statusbar["text"] = "File: %s" % filename
+
+            # load the file into the player
+            player.load_file(self.parent.filename)
 
             # start the consumer in the SDL frame
             player.consumer.start()
 
-            self.current_frame = tk.Label(self.player_frame)
-            self.current_frame.pack(side=tk.TOP)
-
-            self.in_button = tk.Button(self.player_frame, text="Set IN", command=self.set_in)
-            self.in_label = tk.Label(self.player_frame, text="(0)")
-
-            self.out_button = tk.Button(self.player_frame, text="Set OUT", command=self.set_out)
-            self.out_label = tk.Label(self.player_frame, text="(0)")
-
-            player.load_file(filename)
-
-            self.preview_in_button = tk.Button(self.player_frame, text="Preview IN", command=self.preview_in)
-            self.preview_in_button["takefocus"] = tk.FALSE
-            # self.preview_in_button["underline"] = 8
-
-            self.preview_out_button = tk.Button(self.player_frame, text="Preview OUT", command=self.preview_out)
-            self.preview_out_button["takefocus"] = tk.FALSE
-            # self.preview_out_button["underline"] = 8
-
-            self.in_button.pack(side=tk.LEFT)
-            self.out_button.pack(side=tk.RIGHT)
-
-            self.in_label.pack(side=tk.LEFT)
-            self.out_label.pack(side=tk.RIGHT)
-
-            self.preview_in_button.pack(side=tk.LEFT)
-            self.preview_out_button.pack(side=tk.RIGHT)
-
-        else:
-            self.parent.open_file()
+            # set max length of progress bar
+            self.maxlength = player.length() - 1
+            self.player_frame.maxlength = self.maxlength
+            self.player_frame.progressbar["maximum"] = self.maxlength
 
         # buttons
         self.GO = tk.Button(self.button_frame,
@@ -218,37 +261,9 @@ class MainFrame(tk.Frame):
         self.QUIT["command"] = self.quit
         self.QUIT.pack({"side": "right"})
 
-    def set_in(self):
-        self.in_frame = player.get_frame()
-        self.in_label.config(text="(%s)" % self.in_frame)
-        print("Set in frame to %s" % self.in_frame)
-        self.player_frame.focus_set()
-
-    def set_out(self):
-        self.out_frame = player.get_frame()
-        self.out_label.config(text="(%s)" % self.out_frame)
-        print("Set out frame %s" % self.out_frame)
-        app.player_frame.focus_set()
-
-    def preview_in(self):
-        player.seek_frame(self.in_frame)
-        player.play()
-        app.update_progress_bar()
-
-    def preview_out(self):
-        seek = self.out_frame - 120
-        print self.out_frame
-        if seek > 0:
-            player.seek_frame(seek)
-        player.producer.set_in_and_out(self.in_frame, self.out_frame)
-        player.play()
-        app.update_progress_bar()
-        # need to clear in and out here
-        # player.producer.set_in_and_out(-1, -1)
-
     def toggle_play_pause(self, event):
         player.toggle_play_pause()
-        app.update_progress_bar()
+        self.player_frame.update_progress_bar()
 
     def go(self):
         """Run radcast commands"""
@@ -294,7 +309,7 @@ class MainMenu(tk.Menu):
 
 
 class StatusBar(tk.Label):
-    def __init__(self, parent):
+    def __init__(self, parent, *args, **kwargs):
         tk.Label.__init__(self, parent, bd=1, relief="sunken", anchor="w")
         self.parent = parent
 
@@ -315,7 +330,6 @@ class Application(tk.Frame):
         # pack gui components
         self.main.pack(side="top", fill="both", expand=True)
         self.statusbar.pack(side="bottom", fill="x")
-        self.open_file()
 
     def open_file(self):
         """File chooser"""
@@ -325,10 +339,9 @@ class Application(tk.Frame):
         ]
 
         try:
-            # filename = askopenfilename(filetypes=FILETYPES)
-            self.filename = "/tmp/a.mp4"  # for debugging
+            self.filename = askopenfilename(filetypes=FILETYPES)
         except TypeError, e:
-            logging.error("Either the wrong filetype was chosen or no file was.")
+            logging.error("Error opening file")
 
 
 root = tk.Tk()
