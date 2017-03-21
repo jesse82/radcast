@@ -191,6 +191,10 @@ class Player:
         if self.producer.get_speed() == 0:
             return True
 
+    def is_playing(self):
+        if self.producer.get_speed() != 0:
+            return True
+
     def toggle_play_pause(self):
         if self.is_stopped():
             self.producer.set_speed(1)
@@ -235,9 +239,8 @@ class MainFrame(Frame):
             player.load_file(filename)
 
             # set max length of progress bar
-            maxlength = player.length()
-            app.progressbar["maximum"] = maxlength
-
+            self.maxlength = player.length() - 1
+            app.progressbar["maximum"] = self.maxlength
 
             self.preview_in_button = Button(self.player_frame, text="Preview IN", command=self.preview_in)
             self.preview_out_button = Button(self.player_frame, text="Preview OUT", command=self.preview_out)
@@ -323,6 +326,11 @@ class MainFrame(Frame):
 class Application(Frame):
     """Allows the user to set up podcast, choose an in/out point and upload"""
 
+    # open the clip
+    # choose in/out
+    # preview beginning and ending for a quick quality check
+    # hit the GO button
+
     def __init__(self, master=None):
         Frame.__init__(self, master)
         self.pack()
@@ -375,6 +383,11 @@ class Application(Frame):
         self.progressbar.pack()
         self.progressbar["value"] = 0
 
+        # set up scale for scrubbing through player
+        s = ttk.Scale(root, orient=HORIZONTAL, length=650, from_=1.0, to=100.0)
+        s["from"] = 1.0
+        s["to"] = 100
+
         # make a home for the SDL window
         os.environ['SDL_WINDOWID'] = str(self.player_frame.winfo_id())
 
@@ -383,6 +396,15 @@ class Application(Frame):
 
         # start the consumer in the SDL frame
         player.consumer.start()
+
+    def update_progress_bar(self):
+        frame = player.get_frame()
+        self.progressbar["value"] = frame
+        if player.is_playing() and frame < main_frame.maxlength:
+            self.after(100, self.update_progress_bar)
+            print self.progressbar["value"]
+            print main_frame.maxlength
+
 
     def keypress(self, event):
 
@@ -404,6 +426,7 @@ class Application(Frame):
             player.shuttle_forward()
         if key == 'k':
             player.toggle_play_pause()
+            self.update_progress_bar()
         if key == 'j':
             player.shuttle_reverse()
         if key == 'i':
@@ -412,6 +435,7 @@ class Application(Frame):
             main_frame.set_out()
         if key == 'space':
             player.toggle_play_pause()
+            self.update_progress_bar()
         if key == 'Home':
             player.seek_frame(0)
         if key == 'End':
@@ -431,5 +455,4 @@ main_frame = MainFrame(root)
 root.bind('<Control-q>', quit)
 
 app.mainloop()
-
 root.destroy()
