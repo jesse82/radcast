@@ -174,7 +174,6 @@ class Player:
             frame = 0
         elif frame >= length:
             frame = length - 1
-        self.producer.set_speed(0)
         self.producer.seek(frame)
 
     def end(self):
@@ -211,6 +210,7 @@ class MainFrame(Frame):
         global filename
         Frame.__init__(self, parent)
         root.bind_class("Text", "<Control-a>", self.selectall)
+        root.bind_class("Text", "<Tab>", app.player_frame.focus_set)
         self.in_frame = 0
         self.out_frame = 0
 
@@ -227,8 +227,12 @@ class MainFrame(Frame):
         # validation goodness
         vcmd = parent.register(self.validate)
 
+        status_bar = Label(root, bd=1, relief=SUNKEN, anchor=W)
+        status_bar.pack(side=BOTTOM, fill=X)
+
         if filename:
-            file_label = Label(self.player_frame, text="File: %s" % filename)
+            status_bar["text"] = "File: %s" % filename
+
 
             self.in_button = Button(self.player_frame, text="Set IN", command=self.set_in)
             self.in_label = Label(self.player_frame, text="(0)")
@@ -245,7 +249,6 @@ class MainFrame(Frame):
             self.preview_in_button = Button(self.player_frame, text="Preview IN", command=self.preview_in)
             self.preview_out_button = Button(self.player_frame, text="Preview OUT", command=self.preview_out)
 
-            file_label.pack(side=TOP)
 
             self.in_button.pack(side=LEFT)
             self.out_button.pack(side=RIGHT)
@@ -366,8 +369,8 @@ class Application(Frame):
         ]
 
         try:
-            # filename = askopenfilename(filetypes=FILETYPES)
-            filename = "/tmp/a.mp4"  # for debugging
+            filename = askopenfilename(filetypes=FILETYPES)
+            # filename = "/tmp/a.mp4"  # for debugging
         except TypeError, e:
             logging.error("Either the wrong filetype was chosen or no file was.")
 
@@ -402,8 +405,6 @@ class Application(Frame):
         self.progressbar["value"] = frame
         if player.is_playing() and frame < main_frame.maxlength:
             self.after(100, self.update_progress_bar)
-            print self.progressbar["value"]
-            print main_frame.maxlength
 
 
     def keypress(self, event):
@@ -418,15 +419,14 @@ class Application(Frame):
             player.jog(-1)
         if key == 'Right':
             player.jog(+1)
-        if key == '<Shift-Right>' or key == 'Up':
-            player.jog(+10)
-        if key == '<Shift-Left>' or key == 'Down':
-            player.jog(-10)
+        if key == 'Next' or key == 'Up':
+            player.jog(+24)
+        if key == 'Prior' or key == 'Down':
+            player.jog(-24)
         if key == 'l':
             player.shuttle_forward()
         if key == 'k':
             player.toggle_play_pause()
-            self.update_progress_bar()
         if key == 'j':
             player.shuttle_reverse()
         if key == 'i':
@@ -435,21 +435,22 @@ class Application(Frame):
             main_frame.set_out()
         if key == 'space':
             player.toggle_play_pause()
-            self.update_progress_bar()
         if key == 'Home':
             player.seek_frame(0)
         if key == 'End':
             player.seek_frame(player.length())
+
+        if player.is_playing():
+            self.update_progress_bar()
+
         print repr(event.keysym)
         self.progressbar["value"] = player.get_frame()
-        print self.progressbar["value"]
 
 
 root = Tk()
 
 app = Application(master=root)
 main_frame = MainFrame(root)
-
 
 # key bindings
 root.bind('<Control-q>', quit)
