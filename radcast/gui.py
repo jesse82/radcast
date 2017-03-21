@@ -4,6 +4,7 @@
 
 from Tkinter import *
 from tkFileDialog import askopenfilename
+import ttk
 from radcast import logging
 import mlt
 import os
@@ -233,6 +234,11 @@ class MainFrame(Frame):
 
             player.load_file(filename)
 
+            # set max length of progress bar
+            maxlength = player.length()
+            app.progressbar["maximum"] = maxlength
+
+
             self.preview_in_button = Button(self.player_frame, text="Preview IN", command=self.preview_in)
             self.preview_out_button = Button(self.player_frame, text="Preview OUT", command=self.preview_out)
 
@@ -317,11 +323,6 @@ class MainFrame(Frame):
 class Application(Frame):
     """Allows the user to set up podcast, choose an in/out point and upload"""
 
-    # open the clip
-    # choose in/out
-    # preview beginning and ending for a quick quality check
-    # hit the GO button
-
     def __init__(self, master=None):
         Frame.__init__(self, master)
         self.pack()
@@ -357,8 +358,8 @@ class Application(Frame):
         ]
 
         try:
-            filename = askopenfilename(filetypes=FILETYPES)
-            # filename = "/tmp/a.mp4"  # for debugging
+            # filename = askopenfilename(filetypes=FILETYPES)
+            filename = "/tmp/a.mp4"  # for debugging
         except TypeError, e:
             logging.error("Either the wrong filetype was chosen or no file was.")
 
@@ -368,6 +369,11 @@ class Application(Frame):
         self.player_frame.bind("<Shift-Right>", player.jog(+10))
         self.player_frame.bind("<Key>", self.keypress)
         self.player_frame.focus_set()
+
+        # set up progress bar underneath video
+        self.progressbar = ttk.Progressbar(root, length=650, mode="determinate")
+        self.progressbar.pack()
+        self.progressbar["value"] = 0
 
         # make a home for the SDL window
         os.environ['SDL_WINDOWID'] = str(self.player_frame.winfo_id())
@@ -411,8 +417,8 @@ class Application(Frame):
         if key == 'End':
             player.seek_frame(player.length())
         print repr(event.keysym)
-
-
+        self.progressbar["value"] = player.get_frame()
+        print self.progressbar["value"]
 
 
 root = Tk()
@@ -425,4 +431,5 @@ main_frame = MainFrame(root)
 root.bind('<Control-q>', quit)
 
 app.mainloop()
+
 root.destroy()
