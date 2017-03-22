@@ -228,7 +228,6 @@ class MainFrame(tk.Frame):
 
     def load_file(self):
         """Load file into player"""
-        self.parent.open_file()
 
         if clip.filename:
             self.parent.statusbar["text"] = "File: %s" % clip.filename
@@ -272,13 +271,29 @@ class MainFrame(tk.Frame):
 
 
 class About(tk.Toplevel):
-
     """About the application"""
 
     def __init__(self, parent):
-        tk.Menu.__init__(self, parent)
+        tk.Toplevel.__init__(self, parent)
         self.parent = parent
 
+        self.title = "About"
+
+        self.ABOUT_TEXT = """
+radcast: a radical podcast uploader
+
+Copyright (C) 2017  Josh Wheeler 
+
+This program comes with ABSOLUTELY NO WARRANTY;
+
+This is free software, and you are welcome to redistribute it under certain conditions.
+"""
+
+        msg = tk.Message(self, text=self.ABOUT_TEXT, justify="center")
+        msg.pack()
+
+        button = tk.Button(self, text="got it", command=self.destroy)
+        button.pack()
 
 class MainMenu(tk.Menu):
 
@@ -301,7 +316,7 @@ class MainMenu(tk.Menu):
         help_menu.add_command(label="About...", command=self.about)
 
     def about(self):
-        pass
+        self.about = About(root)
 
 
 class StatusBar(tk.Label):
@@ -327,14 +342,12 @@ class Application(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
 
-        # instantiate gui components
         self.statusbar = StatusBar(self)
-        self.menu = MainMenu(self)
-        self.main = MainFrame(self)
-
-        # pack gui components
-        self.main.pack(side="top", fill="both", expand=True)
         self.statusbar.pack(side="bottom", fill="x")
+        self.menu = MainMenu(self)
+
+        # open a file
+        self.open_file()
 
     def open_file(self):
         """File chooser"""
@@ -345,6 +358,9 @@ class Application(tk.Frame):
 
         try:
             clip.filename = tkFileDialog.askopenfilename(filetypes=FILETYPES)
+            if clip.filename:
+                self.main = MainFrame(self)
+                self.main.pack(side="top", fill="both", expand=True)
         except TypeError, e:
             logging.error("Error opening file")
 
