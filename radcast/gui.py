@@ -6,7 +6,7 @@ import os
 import Tkinter as tk
 import ttk
 import tkFileDialog
-from radcast import logging
+import logging
 from mlt_player import player
 
 __copyright__ = "Copyright 2007, Josh Wheeler"
@@ -122,7 +122,6 @@ class InOutFrame(tk.Frame):
 
     def preview_out(self):
         seek_to = clip.out_frame - 240
-        print clip.out_frame
         if seek_to > 0:
             player.seek_frame(seek_to)
         player.producer.set_in_and_out(clip.in_frame, clip.out_frame)
@@ -226,11 +225,23 @@ class MainFrame(tk.Frame):
     def go(self):
         """Run radcast commands"""
         if clip.out_frame <= clip.in_frame:
-            print "Set in and out"
+            # TODO dialog box
+            logging.debug("""No in/out frame set or out frame <= in frame""")
         else:
             title = self.input_frame.title.get().strip()
             description = self.input_frame.description.get(1.0, "end").strip()
-            print("%s\n%s" % (title, description))
+            logging.info(
+                "Calling radcast functions\n"
+                "      In frame: %s\n"
+                "      Out frame: %s\n"
+                "      Title: %s\n"
+                "      Description: %s" % (
+                    clip.in_frame,
+                    clip.out_frame,
+                    title,
+                    description
+                )
+            )
 
     def toggle_play_pause(self, event):
         player.toggle_play_pause()
