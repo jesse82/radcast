@@ -271,19 +271,17 @@ class MainFrame(tk.Frame):
         if key == 'End':
             player.seek_frame(player.length())
         self.video_frame.update_progress_bar()
-        print repr(event.keysym)
         self.video_frame.progressbar["value"] = player.get_frame()
+
+        # print repr(event.keysym)
 
 
 class About(tk.Toplevel):
     """About the application"""
-
     def __init__(self, parent):
         tk.Toplevel.__init__(self, parent)
         self.parent = parent
-
-        self.title = "About"
-
+        self.title = "About radcast"
         self.ABOUT_TEXT = """
 radcast: a radical podcast uploader
 
@@ -300,10 +298,16 @@ This is free software, and you are welcome to redistribute it under certain cond
         button = tk.Button(self, text="got it", command=self.destroy)
         button.pack()
 
+class Settings(tk.Toplevel):
+    """Configure aspects of the applications"""
+    def __init__(self, parent):
+        tk.Toplevel.__init__(self, parent)
+        self.parent = parent
+        self.title = "radcast settings"
+
+
 class MainMenu(tk.Menu):
-
-    """Create File and Help menus and their actions"""
-
+    """Create menu items and their actions"""
     def __init__(self, parent):
         tk.Menu.__init__(self, parent)
         self.parent = parent
@@ -311,17 +315,25 @@ class MainMenu(tk.Menu):
         root.config(menu=self)
 
         file_menu = tk.Menu(self)
+        edit_menu = tk.Menu(self)
+        help_menu = tk.Menu(self)
+
         self.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open...", command=self.parent.open_file)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit, accelerator='Ctrl+Q')
 
-        help_menu = tk.Menu(self)
+        self.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Settings", command=self.settings)
+
         self.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About...", command=self.about)
 
     def about(self):
-        self.about = About(root)
+        About(root)
+
+    def settings(self):
+        Settings(root)
 
 
 class StatusBar(tk.Label):
@@ -341,12 +353,9 @@ clip = Clip()
 
 
 class Application(tk.Frame):
-
     """Set up podcast, choose an in/out point and upload"""
-
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-
         self.statusbar = StatusBar(self)
         self.statusbar.pack(side="bottom", fill="x")
         self.menu = MainMenu(self)
