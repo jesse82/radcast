@@ -102,16 +102,18 @@ class InOutFrame(tk.Frame):
     def set_in(self):
         clip.in_frame = player.get_frame()
         self.in_label.config(text="(%s)" % clip.in_frame)
-        print("Set in frame to %s" % clip.in_frame)
+        logging.debug("Set in frame to %s" % clip.in_frame)
         if clip.in_frame > 0:
             self.preview_in_button["state"] = "normal"
+        self.in_button.focus()
 
     def set_out(self):
         clip.out_frame = player.get_frame()
         self.out_label.config(text="(%s)" % clip.out_frame)
-        print("Set out frame %s" % clip.out_frame)
+        logging.debug("Set out frame %s" % clip.out_frame)
         if clip.out_frame > 0:
             self.preview_out_button["state"] = "normal"
+        self.out_button.focus()
 
     def preview_in(self):
         player.seek_frame(clip.in_frame)
