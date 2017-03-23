@@ -30,17 +30,13 @@ __status__ = "Development"
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class PlayerFrame(tk.Frame):
+class VideoFrame(tk.Frame):
     """SDL player window with indicators and in and out buttons"""
     def __init__(self, parent, width, height):
         tk.Frame.__init__(self, parent, width=width, height=height)
         self.frame = tk.Frame(parent, width=width, height=height)
         self.parent = parent
 
-        self.bind("<Key>", self.keypress)
-        self.bind("<Shift-Right>", player.jog(+10))
-
-        self.focus_set()
         self.frame.pack()
 
         self.in_out_frame = InOutFrame(self)
@@ -53,7 +49,8 @@ class PlayerFrame(tk.Frame):
         root.update()
 
         # create a progress bar underneath video
-        self.progressbar = ttk.Progressbar(self, length=650, mode="determinate")
+        self.progressbar = ttk.Progressbar(self, mode="determinate")
+        self.progressbar["length"] = 650
         self.progressbar["value"] = 0
         self.progressbar.pack()
 
@@ -67,43 +64,10 @@ class PlayerFrame(tk.Frame):
         self.counter_label["text"] = i
         if player.is_playing() and i < self.parent.maxlength:
             root.after(100, self.update_progress_bar)
+        else:
+            # clear in/out for preview out
+            player.producer.set_in_and_out(-1, -1)  
 
-    def keypress(self, event):
-        key = event.keysym
-        if "1" <= key <= "9":
-            length = player.length()
-            percent = int(key) * .100
-            seek = int(length * percent)
-            player.seek_frame(seek)
-        if key == 'Left':
-            player.jog(-1)
-        if key == 'Right':
-            player.jog(+1)
-        if key == 'Next' or key == 'Up':
-            player.jog(+24)
-        if key == 'Prior' or key == 'Down':
-            player.jog(-24)
-        if key == 'l':
-            player.shuttle_forward()
-        if key == 'k':
-            player.toggle_play_pause()
-        if key == 'j':
-            player.shuttle_reverse()
-        if key == 'i':
-            self.in_out_frame.set_in()
-        if key == 'o':
-            self.in_out_frame.set_out()
-        if key == 'space':
-            player.toggle_play_pause()
-        if key == 'Home':
-            player.seek_frame(0)
-        if key == 'End':
-            player.seek_frame(player.length())
-
-        self.update_progress_bar()
-
-        print repr(event.keysym)
-        self.progressbar["value"] = player.get_frame()
 
 
 class InOutFrame(tk.Frame):
@@ -152,17 +116,16 @@ class InOutFrame(tk.Frame):
         self.parent.update_progress_bar()
 
     def preview_out(self):
-        seek = clip.out_frame - 120
+        seek_to = clip.out_frame - 240
         print clip.out_frame
-        if seek > 0:
-            player.seek_frame(seek)
+        if seek_to > 0:
+            player.seek_frame(seek_to)
         player.producer.set_in_and_out(clip.in_frame, clip.out_frame)
         player.play()
-
         self.parent.update_progress_bar()
 
 
-class TextInputFrame(tk.Frame):
+class InputFrame(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
@@ -194,7 +157,7 @@ class TextInputFrame(tk.Frame):
     # events
 
     def set_focus(self, event):
-        self.player_frame.focus_set
+        self.video_frame.focus_set
 
     def select_all(self, event):
         event.widget.tag_add("sel", "1.0", "end")
@@ -207,6 +170,11 @@ class MainFrame(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
 
+        # key bindings
+        self.bind("<Key>", self.keypress)
+        self.bind("<Shift-Right>", player.jog(+10))
+        self.focus_set()
+
         self.bind_class("Button", "<space>", self.toggle_play_pause)
 
         # Need to rework bindings for the following to work
@@ -214,12 +182,12 @@ class MainFrame(tk.Frame):
         # root.bind("<Alt-o>", self.preview_out())
 
         # create frames within main frame
-        self.player_frame = PlayerFrame(self, width=650, height=400)
-        self.text_input = TextInputFrame(self)
+        self.video_frame = VideoFrame(self, width=650, height=400)
+        self.text_input = InputFrame(self)
         self.button_frame = tk.Frame(self)
 
         # pack frames
-        self.player_frame.pack()
+        self.video_frame.pack()
         self.text_input.pack()
         self.button_frame.pack()
 
@@ -240,10 +208,11 @@ class MainFrame(tk.Frame):
 
             # set max length of progress bar
             self.maxlength = player.length() - 1
-            self.player_frame.maxlength = self.maxlength
-            self.player_frame.progressbar["maximum"] = self.maxlength
+            self.video_frame.maxlength = self.maxlength
+            self.video_frame.progressbar["maximum"] = self.maxlength
 
         # buttons
+
         self.GO = tk.Button(self.button_frame,
                             text="Upload Podcast",
                             command=self.go,
@@ -256,18 +225,53 @@ class MainFrame(tk.Frame):
         self.QUIT["command"] = self.quit
         self.QUIT.pack({"side": "right"})
 
-    def toggle_play_pause(self, event):
-        player.toggle_play_pause()
-        self.player_frame.update_progress_bar()
-
     def go(self):
         """Run radcast commands"""
-        if clip.in_frame <= clip.out_frame:
+        if clip.out_frame <= clip.in_frame:
             print "Set in and out"
         else:
             title = self.title.get().strip()
             description = self.description.get(1.0, tk.END).strip()
             print("%s\n%s" % (title, description))
+
+    def toggle_play_pause(self, event):
+        player.toggle_play_pause()
+        self.video_frame.update_progress_bar()
+
+    def keypress(self, event):
+        key = event.keysym
+        if "1" <= key <= "9":
+            length = player.length()
+            percent = int(key) * .100
+            seek = int(length * percent)
+            player.seek_frame(seek)
+        if key == 'Left':
+            player.jog(-1)
+        if key == 'Right':
+            player.jog(+1)
+        if key == 'Next' or key == 'Up':
+            player.jog(+24)
+        if key == 'Prior' or key == 'Down':
+            player.jog(-24)
+        if key == 'l':
+            player.shuttle_forward()
+        if key == 'k':
+            player.toggle_play_pause()
+        if key == 'j':
+            player.shuttle_reverse()
+        if key == 'i':
+            self.video_frame.in_out_frame.set_in()
+        if key == 'o':
+            self.video_frame.in_out_frame.set_out()
+        if key == 'space':
+            player.toggle_play_pause()
+        if key == 'Home':
+            player.seek_frame(0)
+        if key == 'End':
+            player.seek_frame(player.length())
+        self.video_frame.update_progress_bar()
+        print repr(event.keysym)
+        self.video_frame.progressbar["value"] = player.get_frame()
 
 
 class About(tk.Toplevel):
