@@ -187,16 +187,27 @@ class MainFrame(tk.Frame):
 
         # create frames within main frame
         self.video_frame = VideoFrame(self, width=650, height=400)
-        self.text_input = InputFrame(self)
+        self.input_frame = InputFrame(self)
         self.button_frame = tk.Frame(self)
 
         # pack frames
         self.video_frame.pack()
-        self.text_input.pack()
+        self.input_frame.pack()
         self.button_frame.pack()
 
         # load file into player
         self.load_file()
+
+        # main action buttons
+        self.GO = tk.Button(self.button_frame,
+                            text="Upload Podcast",
+                            command=self.go,
+                            state="disabled")
+        self.GO.pack({"side": "left"})
+        self.QUIT = tk.Button(self.button_frame)
+        self.QUIT["text"] = "Quit",
+        self.QUIT["command"] = self.quit
+        self.QUIT.pack({"side": "right"})
 
     def load_file(self):
         """Load file into player"""
@@ -215,27 +226,13 @@ class MainFrame(tk.Frame):
             self.video_frame.maxlength = self.maxlength
             self.video_frame.progressbar["maximum"] = self.maxlength
 
-        # buttons
-
-        self.GO = tk.Button(self.button_frame,
-                            text="Upload Podcast",
-                            command=self.go,
-                            state=tk.DISABLED)
-
-        self.GO.pack({"side": "left"})
-
-        self.QUIT = tk.Button(self.button_frame)
-        self.QUIT["text"] = "Quit",
-        self.QUIT["command"] = self.quit
-        self.QUIT.pack({"side": "right"})
-
     def go(self):
         """Run radcast commands"""
         if clip.out_frame <= clip.in_frame:
             print "Set in and out"
         else:
-            title = self.title.get().strip()
-            description = self.description.get(1.0, tk.END).strip()
+            title = self.input_frame.title.get().strip()
+            description = self.input_frame.description.get(1.0, tk.END).strip()
             print("%s\n%s" % (title, description))
 
     def toggle_play_pause(self, event):
