@@ -56,7 +56,7 @@ class VideoFrame(tk.Frame):
 
         # add counter label below progress bar
         self.counter_label = tk.Label(self)
-        self.counter_label.pack(side=tk.TOP)
+        self.counter_label.pack(side="top")
 
     def update_progress_bar(self):
         i = player.get_frame()
@@ -67,7 +67,6 @@ class VideoFrame(tk.Frame):
         else:
             # clear in/out for preview out
             player.producer.set_in_and_out(-1, -1)  
-
 
 
 class InOutFrame(tk.Frame):
@@ -87,7 +86,7 @@ class InOutFrame(tk.Frame):
         # self.preview_in_button["underline"] = 8
 
         self.preview_out_button = tk.Button(self, text="Preview OUT", command=self.preview_out)
-        self.preview_out_button["takefocus"] = "false"
+        self.preview_out_button["takefocus"] = tk.FALSE
         self.preview_out_button["state"] = "disabled"
         # self.preview_out_button["underline"] = 8
 
@@ -134,7 +133,7 @@ class InputFrame(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.bind_class("Text", "<Control-a>", self.select_all)
-        self.bind_class("Text", "<Tab>", self.set_focus)
+        self.bind_class("Text", "<Tab>", parent.set_focus)
 
         # validation goodness
         vcmd = parent.register(self.validate)
@@ -160,9 +159,6 @@ class InputFrame(tk.Frame):
 
     # events
 
-    def set_focus(self, event):
-        self.parent.focus_set
-
     def select_all(self, event):
         event.widget.tag_add("sel", "1.0", "end")
 
@@ -170,20 +166,19 @@ class InputFrame(tk.Frame):
 class MainFrame(tk.Frame):
     """Collect info needed for podcast"""
 
+    def set_focus(self, event):
+        self.parent.focus_set
+
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
 
         # key bindings
-        self.bind("<Key>", self.keypress)
-        self.bind("<Shift-Right>", player.jog(+10))
         self.focus_set()
-
+        self.bind("<Key>", self.keypress)
+        # override buttons with custom keypress function
         self.bind_class("Button", "<space>", self.toggle_play_pause)
-
-        # Need to rework bindings for the following to work
-        # root.bind("<Alt-i>", self.preview_in())
-        # root.bind("<Alt-o>", self.preview_out())
+        self.bind_class("Button", "<Key>", self.keypress)
 
         # create frames within main frame
         self.video_frame = VideoFrame(self, width=650, height=400)
@@ -232,7 +227,7 @@ class MainFrame(tk.Frame):
             print "Set in and out"
         else:
             title = self.input_frame.title.get().strip()
-            description = self.input_frame.description.get(1.0, tk.END).strip()
+            description = self.input_frame.description.get(1.0, "end").strip()
             print("%s\n%s" % (title, description))
 
     def toggle_play_pause(self, event):
