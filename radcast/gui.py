@@ -83,32 +83,36 @@ class InOutFrame(tk.Frame):
 
         self.preview_in_button = tk.Button(self, text="Preview IN", command=self.preview_in)
         self.preview_in_button["takefocus"] = tk.FALSE
+        self.preview_in_button["state"] = "disabled"
         # self.preview_in_button["underline"] = 8
 
         self.preview_out_button = tk.Button(self, text="Preview OUT", command=self.preview_out)
-        self.preview_out_button["takefocus"] = tk.FALSE
+        self.preview_out_button["takefocus"] = "false"
+        self.preview_out_button["state"] = "disabled"
         # self.preview_out_button["underline"] = 8
 
-        self.in_button.pack(side=tk.LEFT)
-        self.out_button.pack(side=tk.RIGHT)
+        self.in_button.pack(side="left")
+        self.out_button.pack(side="right")
 
-        self.in_label.pack(side=tk.LEFT)
-        self.out_label.pack(side=tk.RIGHT)
+        self.in_label.pack(side="left")
+        self.out_label.pack(side="right")
 
-        self.preview_in_button.pack(side=tk.LEFT)
-        self.preview_out_button.pack(side=tk.RIGHT)
+        self.preview_in_button.pack(side="left")
+        self.preview_out_button.pack(side="right")
 
     def set_in(self):
         clip.in_frame = player.get_frame()
         self.in_label.config(text="(%s)" % clip.in_frame)
         print("Set in frame to %s" % clip.in_frame)
-        # self.focus_set()
+        if clip.in_frame > 0:
+            self.preview_in_button["state"] = "normal"
 
     def set_out(self):
         clip.out_frame = player.get_frame()
         self.out_label.config(text="(%s)" % clip.out_frame)
         print("Set out frame %s" % clip.out_frame)
-        # self.focus_set()
+        if clip.out_frame > 0:
+            self.preview_out_button["state"] = "normal"
 
     def preview_in(self):
         player.seek_frame(clip.in_frame)
@@ -136,28 +140,28 @@ class InputFrame(tk.Frame):
         vcmd = parent.register(self.validate)
 
         # title
-        tk.Label(self, text="Title", anchor=tk.W).grid(row=1, sticky=tk.W)
+        tk.Label(self, text="Title", anchor="w").grid(row=1, sticky="w")
         self.title = tk.Entry(self, width=70, validate='key', validatecommand=(vcmd, '%P'))
-        self.title.grid(row=2, pady=(4, 10), sticky=tk.W)
+        self.title.grid(row=2, pady=(4, 10), sticky="w")
 
         # description
-        tk.Label(self, text="Description", anchor=tk.W).grid(row=3, sticky=tk.W)
-        self.description = tk.Text(self, height=7, wrap=tk.WORD)
+        tk.Label(self, text="Description", anchor="w").grid(row=3, sticky="w")
+        self.description = tk.Text(self, height=7, wrap="word")
         self.description.bind("<KeyRelease>", self.validate)
-        self.description.grid(row=4, pady=(4, 10), sticky=tk.W)
+        self.description.grid(row=4, pady=(4, 10), sticky="w")
 
     def validate(self, P):
         """Insure user input is as correct as this model can be"""
         title = self.title.get().strip()
-        description = self.description.get(1.0, tk.END).strip()
+        description = self.description.get(1.0, "end").strip()
         if title and description:
-            self.parent.GO["state"] = tk.NORMAL
+            self.parent.GO["state"] = "normal"
         return True
 
     # events
 
     def set_focus(self, event):
-        self.video_frame.focus_set
+        self.parent.focus_set
 
     def select_all(self, event):
         event.widget.tag_add("sel", "1.0", "end")
