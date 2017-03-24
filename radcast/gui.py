@@ -8,7 +8,15 @@ import ttk
 import tkFileDialog
 import tkMessageBox
 import logging
+import threading
 from mlt_player import player
+from . import radcast
+
+import fcntl
+import select
+import subprocess
+import sys
+import re
 
 __copyright__ = "Copyright 2007, Josh Wheeler"
 __license__ = "GPL"
@@ -67,7 +75,7 @@ class VideoFrame(tk.Frame):
             root.after(100, self.update_progress_bar)
         else:
             # clear in/out for preview out
-            player.producer.set_in_and_out(-1, -1)  
+            player.producer.set_in_and_out(-1, -1)
 
 
 class InOutFrame(tk.Frame):
@@ -232,8 +240,9 @@ class MainFrame(tk.Frame):
             )
             logging.debug("""No in/out frame set or out frame <= in frame""")
         else:
-            title = self.input_frame.title.get().strip()
-            description = self.input_frame.description.get(1.0, "end").strip()
+            self.title = self.input_frame.title.get().strip()
+            self.description = self.input_frame.description.get(1.0, "end").strip()
+
             logging.info(
                 "Calling radcast functions\n"
                 "      In frame: %s\n"
@@ -242,10 +251,73 @@ class MainFrame(tk.Frame):
                 "      Description: %s" % (
                     clip.in_frame,
                     clip.out_frame,
-                    title,
-                    description
+                    self.title,
+                    self.description
                 )
             )
+
+            # start the encode process
+            self.encode()
+
+    def encode(self):
+        logging.info("Encoding")
+
+        radcast.generate_melt("video.melt", clip.filename, clip.in_frame, clip.out_frame)
+        radcast.generate_melt("audio.melt", clip.filename, clip.in_frame, clip.out_frame)
+
+        # radcast.encode_video("video.melt", self.title)
+        # radcast.encode_audio("audio.melt", self.title)
+
+        player.load_file("video.melt")
+        self.total_run_time = player.producer.get_length()
+
+        mlt_profile = 'atsc_720p_2997'
+        mlt_producer = "video.melt"
+
+        output_file = radcast.slugify(self.title) + ".mkv"
+
+        # TODO check available space before encoding
+
+        command = [
+            'melt', '-profile', mlt_profile,
+            '-producer', mlt_producer,
+            '-consumer', 'avformat:' + output_file,
+            'vcodec=libx264',
+            'color_primaries=bt709',
+            'preset=slower',
+            'b=7500k',
+            'movflags=+faststart',
+            'acodec=aac',
+            'ab=320k',
+            'ac=2',
+            '1>&2'
+        ]
+
+        logging.debug("encode command %s: " % command)
+
+        sub = subprocess.Popen(command, stderr=subprocess.PIPE, universal_newlines=True)
+
+        while True:
+
+            if sub.poll() is not None:
+                self.encode_complete_callback()
+                self.video_frame.counter_label["text"] = ""
+                break
+
+            for line in iter(sub.stderr.readline, b''):
+                raw_counter = re.search("Current Position:\s+([0-9]+)", line)
+                if raw_counter:  # prevent AttributeError when NoneType object
+                    frame_counter = raw_counter.group(1)
+                    self.progress_callback(frame_counter, self.total_run_time, "Encoding")
+
+    def progress_callback(self, progress, duration, text):
+        self.video_frame.progressbar["maximum"] = duration
+        self.video_frame.progressbar["value"] = progress
+        self.video_frame.progressbar.update()
+        self.video_frame.counter_label["text"] = text
+
+    def encode_complete_callback(self):
+        tkMessageBox.showinfo(u"Encoding complete", u"Encoding complete")
 
     def toggle_play_pause(self, event):
         player.toggle_play_pause()
@@ -390,7 +462,7 @@ class Application(tk.Frame):
         except TypeError, e:
             logging.error("Error opening file")
 
-
+# TODO add window geometry and title
 root = tk.Tk()
 
 Application(root).pack(side="top", fill="both", expand=True)
@@ -402,6 +474,8 @@ root.bind('<Control-q>', quit)
 root.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
 
 root.mainloop()
+
+# TODO add a proper quit method
 
 # clean up
 root.destroy()
