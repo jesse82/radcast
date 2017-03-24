@@ -6,6 +6,7 @@ import os
 import Tkinter as tk
 import ttk
 import tkFileDialog
+import tkMessageBox
 import logging
 from mlt_player import player
 
@@ -225,7 +226,10 @@ class MainFrame(tk.Frame):
     def go(self):
         """Run radcast commands"""
         if clip.out_frame <= clip.in_frame:
-            # TODO dialog box
+            tkMessageBox.showwarning(
+                "waitaminute",
+                "No in/out set or out frame set before in frame"
+            )
             logging.debug("""No in/out frame set or out frame <= in frame""")
         else:
             title = self.input_frame.title.get().strip()
