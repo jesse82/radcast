@@ -1,0 +1,8 @@
+- [ ] Show settings configuration if settings file is not present
+- [ ] Option to normalize and level audio
+- [ ] Add basic editing functionality
+- [ ] Remember last edit template as default
+- [ ] Can another player be used to be more cross-platform? gstreamer? (PyGI)
+- [ ] Convert to python3
+- [x] Hide main_frame until a file is chosen
+- [x] Fix keybindings so they work when player is not focused

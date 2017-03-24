@@ -1,9 +1,0 @@
-** TODO Show settings configuration if settings file is not present
-** TODO Option to normalize and level audio
-** TODO Add basic editing functionality
-** TODO Remember last edit template as default
-** TODO Can another player be used to be more cross-platform? gstreamer? (PyGI)
-** TODO Convert to python3
-** DONE Hide main_frame until a file is chosen
-** DONE Fix keybindings so they work when player is not focused
-   CLOSED: [2017-03-23 Thu 07:06]
