@@ -1,12 +1,14 @@
 ## GUI
 
 - [ ] Settings window
+- [ ] Add keybindings to about menu
 - [ ] Option to normalize and level audio
 - [ ] Show settings configuration if settings file is not present
 - [ ] Basic editing functionality
 
 ## General / Non-GUI
 
+- [ ] Vimeo authentication
 - [ ] Save/load edit templates end remember last used by default
 - [x] Hide main_frame until a file is chosen
 - [x] Fix keybindings so they work consistently
