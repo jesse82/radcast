@@ -2,14 +2,39 @@
 
 Radcast was created to save hours of podcast encode and upload time by doing the encoding and uploading automatically.
 
-Workflow:
+**** Workflow
 
-1. Choose File
-2. Set in/out frames
-3. Upload
+     1. Choose File
+     2. Set in/out frames
+     3. Upload
 
 [[docs/radcast-draft1.gif]]
 
-** Contributing
+*** Requirements
 
-Check the [[TODO.md][TODO]] page for current status of the project. Pull requests are welcome
+    Radcast uses the MLT framework for video playback and editing, jinja2 for templating, and ffmpeg for encoding.
+
+** Installation
+
+*** Debian
+
+    #+BEGIN_EXAMPLE
+    sudo apt-get update
+    sudo apt-get install python-mlt python-pip python-jinja2
+    pip install PyVimeo
+    #+END_EXAMPLE
+
+*** Fedora
+
+    #+BEGIN_EXAMPLE
+    sudo dnf install mlt-python python-pip python2-jinja2
+    pip install PyVimeo
+    #+END_EXAMPLE
+
+** Status
+
+   Check the [[TODO.md][TODO]] page for current status of the project.
+
+** Contribution
+
+   Pull requests are welcome.
