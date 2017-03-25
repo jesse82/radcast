@@ -1,0 +1,15 @@
+#+TITLE: Radcast - Radical podcast automation
+
+Radcast was created to save hours of podcast encode and upload time by doing the encoding and uploading automatically.
+
+Workflow:
+
+1. Choose File
+2. Set in/out frames
+3. Upload
+
+[[../docs/radcast-draft1.gif]]
+
+** Contributing
+
+Check the [[TODO.md][TODO]] page for current status of the project. Pull requests are welcome
