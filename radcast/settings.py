@@ -2,6 +2,7 @@
 
 import os
 import yaml
+import logging
 
 """settings.py: Gather project settings and preferences"""
 
@@ -28,57 +29,83 @@ __status__ = "Development"
 
 class Settings:
 
-    """Project settings, and preferences"""
+    """Settings and preferences"""
 
     def __init__(self):
 
-        try:  # if current directory exists
-            self.project_dir = os.getcwd()
-        except OSError:  # if not, go back a directory and try again
-            os.chdir("..")
-            self.project_dir = os.getcwd()
+        PROFILES = [
+            "atsc_1080p_2398",
+            "atsc_1080p_24",
+            "atsc_1080p_2997",
+            "atsc_1080p_30",
+            "atsc_1080p_50",
+            "atsc_1080p_5994",
+            "atsc_1080p_60",
+            "atsc_720p_2398",
+            "atsc_720p_24",
+            "atsc_720p_25",
+            "atsc_720p_2997",
+            "atsc_720p_30",
+            "atsc_720p_50",
+            "atsc_720p_5994",
+            "atsc_720p_60",
+            "dv_ntsc",
+            "dv_ntsc_wide"
+        ]
 
-        # set initial values
-        self.profile = "atsc_720p_2997"
-        self.media_dir = None
-        self.frame_rate = 30
-        self.drop_frame = True
-        self.jog_skip_frames = 8
-        self.still_seconds = 6
-        self.transition_length = int(self.frame_rate)
-        self.pre_roll = int(self.frame_rate)
+        # set initial minimum cfg values
 
-        try:  # if settings file exists in current dir, read into cfg
+        self.cfg = {
+            "profile": "atsc_720p_2997",
+            "jog_skip_frames": 30,
+            "transition_length": 24,
+        }
 
-            with open(self.project_dir + "/settings.yml", 'r') as ymlfile:
-                cfg = yaml.safe_load(ymlfile)
+        try:  # if home directory exists
+            self.home_dir = os.path.expanduser("~")
+        except:
+            logging.error("Cannot access home directory for settings file.")
 
-                # TODO deserialize implicitly instead of explicitly
+        self.files_found = 0
+        cfg_sources = [
+            self.home_dir + "/.radcast",
+            self.home_dir + "/.radcast.yml",
+            self.home_dir + "/.config/radcast/settings.yml",
+            self.home_dir + "/radcast/settings.yml",
+        ]
 
-                self.title = cfg.get('title', self.title)
-                self.project_dir = cfg.get('project_dir', self.project_dir)
-                self.media_dir = cfg.get('media_dir', self.media_dir)
-                self.profile = cfg.get('profile', self.profile)
-                self.frame_rate = cfg.get('frame_rate', self.frame_rate)
-                self.pre_roll = int(cfg.get('pre_roll', self.pre_roll))
-                self.drop_frame = cfg.get('drop_frame', self.drop_frame)
-                self.jog_skip_frames = cfg.get('jog_skip_frames', self.jog_skip_frames)
-                self.still_seconds = cfg.get('still_seconds', self.still_seconds)
-                self.transition_length = int(cfg.get('transition_length', self.transition_length))
+        try:  # if settings file exists in first of cfg_sources, read cfg dict
+
+            for c in cfg_sources:
+                if os.path.isfile(c):
+                    self.cfg = yaml.safe_load(open(c))
+                    self.files_found += 1
+                    logging.debug(
+                        "Settings file(s) found: %s" % self.files_found
+                    )
+                    break
 
         except yaml.YAMLError, e:
 
             if hasattr(e, 'problem_mark'):
                 mark = e.problem_mark
-                print("Error in settings file: (line %s, column %s)" % (
-                    mark.line + 1, mark.column + 1)
+                logging.error(
+                    "Error in settings file: (line %s, column %s)" %
+                    (mark.line + 1, mark.column + 1)
                 )
 
         except:
 
-            print "No settings file detected."
+            if self.files_found < 1:  # create default settings file if none are found
 
-        # set dependent variables
-        self.still_frames = self.still_seconds * self.frame_rate
+                logging.debug("No settings file found. \
+                Creating default settings file in ~/.radcast")
+
+                try:
+                    with open(self.home_dir + '/.radcast', 'w') as cfg_file:
+                        yaml.dump(self.cfg, cfg_file, default_flow_style=False)
+                except:
+                    logging.error("Error writing settings file")
 
 settings = Settings()
+cfg = settings.cfg

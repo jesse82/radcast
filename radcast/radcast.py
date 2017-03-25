@@ -4,7 +4,7 @@
 
 import subprocess
 import os
-import time
+import re
 import jinja2
 import logging
 import vimeo
@@ -41,52 +41,56 @@ v = vimeo.VimeoClient(
     secret=VIMEO_CLIENT_SECRET
 )
 
-# set up logging
-logging.basicConfig(
-    filename='radcast.log',
-    format='%(levelname)s: %(message)s',
-    filemode="w",
-    level=logging.DEBUG
-)
 
-logging.info("Started %s" % time.strftime("%a, %d %b %Y %T %Z"))
+def generate_melt(template, media_file, in_frame, out_frame):
+    """Take template, video file, in/out frames, and
+    generate a melt file of template_name.melt"""
 
-
-def generate_melt(video_file, in_frame, out_frame):
-    """Take user-defined in/out frames, and generate a melt file"""
-
-    output_file = "edit.melt"
+    output_file = template
 
     try:
-
-        loader = jinja2.PackageLoader("editty", "templates")
-        env = jinja2.Environment(loader=self.loader)
-        mlt_file = open(settings.title + ".melt", "w+")
-        template_xml = self.env.get_template("serialize.melt")
+        loader = jinja2.PackageLoader("radcast", "templates")
+        env = jinja2.Environment(loader=loader)
+        mlt_file = open(output_file, "w+")
+        template_xml = env.get_template(template)
         # set up template variables
-        render = self.template_xml.render(
-            video_file=video_file,
+        render = template_xml.render(
+            media_file=media_file,
             in_frame=in_frame,
             out_frame=out_frame,
             )
         mlt_file.write(render)
 
+    except jinja2.TemplateNotFound, e:
+        logging.error("Bummer! %s is missing from the template stack" % e)
+
     except:
-        logging.error("Bummer! An exception occurred while generating the melt.")
+        logging.error("Bummer! An exception occurred while generating the melt")
 
     finally:
-        logging.error("Reached cleanup stage of generate_melt.")
+        logging.error("Reached cleanup stage of melt generator")
         mlt_file.close()
 
 
-def encode_video(file):
-    """Accept a MLT producer and encode video"""
+def slugify(s):
+    """
+    Converts string to lowercase, removes non-alpha characters,
+    and converts spaces to underscores.
+    """
+    s = re.sub('[^\w\s-]', '', s).strip().lower()
+    s = re.sub('[-\s]+', '_', s)
+    return s
 
-    output_file = "test.mkv"
+
+def encode_video(file, title):
+    """Accept MLT producer file and encode video"""
+
     mlt_profile = 'atsc_720p_2997'
     mlt_producer = file
 
-    # TODO check for available space before encoding
+    output_file = slugify(title) + ".mkv"
+
+    # TODO check available space before encoding
 
     try:
 
@@ -117,13 +121,39 @@ def encode_video(file):
         pass
 
 
-def encode_audio(file):
-    """Encode audio to mp3"""
+def encode_audio(file, title):
+    """Accept MLT producer file and encode audio"""
 
-    # TODO check for available space before encoding
+    mlt_producer = file
+
+    output_file = slugify(title) + ".mp3"
+
+    # TODO check available space before encoding
+
+    try:
+
+        logging.debug("Encoding podcast video from %s" % mlt_producer)
+
+        command = [
+            '-producer', mlt_producer,
+            '-consumer', 'avformat:' + output_file,
+            'ab=64k',
+            'ac=1'
+        ]
+
+        subprocess.call(command)
+
+    except:
+        logging.error("Bummer! An exception occurred in the audio encoding process.")
+
+
+def ffmpeg_encode_audio(file, title):
+    """Encode audio to mp3 using ffmpeg"""
+
+    # TODO check available space before encoding
 
     input_file = file
-    output_file = "test.mp3"
+    output_file = slugify(title) + ".mp3"
 
     try:
 
@@ -150,6 +180,7 @@ def encode_audio(file):
 def copy_to_cloud(destination):
     """Add media to cloud device at destination"""
     # check available space at destination
+    pass
 
 
 def send_notification():
@@ -221,5 +252,4 @@ def upload_to_vimeo(vimeo_client, file, name=None, description=None, image=None)
 
 # TODO if failed, try again n times before giving up altogether
 
-# TODO archive original media to a storage device.
-
+# TODO archive original media to a storage device

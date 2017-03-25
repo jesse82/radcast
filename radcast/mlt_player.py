@@ -34,7 +34,7 @@ class Player:
 
         # initialize mlt
         mlt.Factory().init()
-        self.mlt_profile = mlt.Profile(settings.profile)
+        self.mlt_profile = mlt.Profile(settings.cfg["profile"])
 
         # initialize producer with NULL if no current_clip is available
         self.producer = mlt.Producer(self.mlt_profile, self.current_clip)

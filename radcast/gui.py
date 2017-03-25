@@ -10,12 +10,8 @@ import tkMessageBox
 import logging
 import threading
 from mlt_player import player
-from . import radcast
-
-import fcntl
-import select
+from . import radcast, settings
 import subprocess
-import sys
 import re
 
 __copyright__ = "Copyright 2007, Josh Wheeler"
@@ -265,13 +261,10 @@ class MainFrame(tk.Frame):
         radcast.generate_melt("video.melt", clip.filename, clip.in_frame, clip.out_frame)
         radcast.generate_melt("audio.melt", clip.filename, clip.in_frame, clip.out_frame)
 
-        # radcast.encode_video("video.melt", self.title)
-        # radcast.encode_audio("audio.melt", self.title)
-
         player.load_file("video.melt")
         self.total_run_time = player.producer.get_length()
 
-        mlt_profile = 'atsc_720p_2997'
+        mlt_profile = settings.cfg["profile"]
         mlt_producer = "video.melt"
 
         output_file = radcast.slugify(self.title) + ".mkv"
@@ -308,7 +301,8 @@ class MainFrame(tk.Frame):
                 raw_counter = re.search("Current Position:\s+([0-9]+)", line)
                 if raw_counter:  # prevent AttributeError when NoneType object
                     frame_counter = raw_counter.group(1)
-                    self.progress_callback(frame_counter, self.total_run_time, "Encoding")
+                    self.progress_callback(frame_counter, self.total_run_time,
+                                           "Encoding %s" % output_file)
 
     def progress_callback(self, progress, duration, text):
         self.video_frame.progressbar["maximum"] = duration
@@ -317,7 +311,9 @@ class MainFrame(tk.Frame):
         self.video_frame.counter_label["text"] = text
 
     def encode_complete_callback(self):
+        self.video_frame.counter_label["text"] = "Encoding complete"
         tkMessageBox.showinfo(u"Encoding complete", u"Encoding complete")
+        logging.info("Encoding complete")
 
     def toggle_play_pause(self, event):
         player.toggle_play_pause()
@@ -367,9 +363,9 @@ class About(tk.Toplevel):
         self.parent = parent
         self.title = "About radcast"
         self.ABOUT_TEXT = """
-radcast: a radical podcast uploader
+Radcast: radical podcast automation
 
-Copyright (C) 2017  Josh Wheeler 
+Copyright (C) 2017 Josh Wheeler 
 
 This program comes with ABSOLUTELY NO WARRANTY;
 
@@ -382,12 +378,29 @@ This is free software, and you are welcome to redistribute it under certain cond
         button = tk.Button(self, text="got it", command=self.destroy)
         button.pack()
 
-class Settings(tk.Toplevel):
+
+class Settings(ttk.Notebook):
     """Configure aspects of the applications"""
-    def __init__(self, parent):
-        tk.Toplevel.__init__(self, parent)
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Notebook.__init__(self, parent, *args, **kwargs)
         self.parent = parent
-        self.title = "radcast settings"
+        self.title = "Radcast settings"
+
+        tab1 = tk.Frame()   # first page, which would get widgets gridded into it
+        tab2 = tk.Frame()   # second page
+
+        tk.Entry(tab1)
+
+        self.add(tab1, text='One')
+        self.add(tab2, text='Two')
+
+
+        button_frame = tk.Frame()
+        tk.Button(button_frame, text="Save & Close").pack(side="left")
+        tk.Button(button_frame, text="Cancel").pack(side="right")
+        button_frame.pack()
+
+        self.pack()
 
 
 class MainMenu(tk.Menu):
@@ -417,7 +430,8 @@ class MainMenu(tk.Menu):
         About(root)
 
     def settings(self):
-        Settings(root)
+        if not self.parent.settings:
+            Settings(root)
 
 
 class StatusBar(tk.Label):
@@ -447,6 +461,12 @@ class Application(tk.Frame):
         # open a file
         self.open_file()
 
+        # display settings
+        # self.display_settings()
+
+    def display_settings(self):
+        self.settings = Settings(self)
+
     def open_file(self):
         """File chooser"""
 
@@ -462,8 +482,9 @@ class Application(tk.Frame):
         except TypeError, e:
             logging.error("Error opening file")
 
-# TODO add window geometry and title
 root = tk.Tk()
+root.title("Radcast")
+root.geometry("600x700")
 
 Application(root).pack(side="top", fill="both", expand=True)
 
