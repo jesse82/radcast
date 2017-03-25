@@ -1,6 +1,6 @@
 #+TITLE: Radcast - Radical podcast automation
 
-Radcast was created to save hours of podcast encode and upload time by doing the encoding and uploading automatically.
+Radcast was created to save hours of podcast encode and upload time by automation.
 
 **** Workflow
 
@@ -20,14 +20,14 @@ Radcast was created to save hours of podcast encode and upload time by doing the
 
     #+BEGIN_EXAMPLE
     sudo apt-get update
-    sudo apt-get install python-mlt python-pip python-jinja2
+    sudo apt-get install python-mlt ffmpeg python-pip python-jinja2
     pip install PyVimeo
     #+END_EXAMPLE
 
 *** Fedora
 
     #+BEGIN_EXAMPLE
-    sudo dnf install mlt-python python-pip python2-jinja2
+    sudo dnf install mlt-python python-pip python2-jinja2 ffmpeg
     pip install PyVimeo
     #+END_EXAMPLE
 
