@@ -8,7 +8,7 @@ Workflow:
 2. Set in/out frames
 3. Upload
 
-[[../docs/radcast-draft1.gif]]
+[[docs/radcast-draft1.gif]]
 
 ** Contributing
 
