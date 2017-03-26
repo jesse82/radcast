@@ -5,9 +5,9 @@
 - [ ] Convert to Qt5
 - [ ] Convert from MLT to VideoPy
 - [ ] Convert to python3
-
 - [ ] arg parser for command line
 - [ ] Vimeo authentication
+- [ ] Vimeo cover image select and upload
 
 ### Medium Priority
 
