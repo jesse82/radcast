@@ -1,22 +1,25 @@
 ## GUI
 
-- [ ] Settings window
-- [ ] Add keybindings to about menu
-- [ ] Option to normalize and level audio
-- [ ] Show settings configuration if settings file is not present
-- [ ] Basic editing functionality
+### Top Priority
 
-## General / Non-GUI
-
-- [ ] Vimeo authentication
-- [ ] Save/load edit templates end remember last used by default
-- [x] Hide main_frame until a file is chosen
-- [x] Fix keybindings so they work consistently
-
-## OTHER
-
-- [ ] GUI for Mac OS X.
-
-mlt and gstreamer aren't working properly on OS X. If an aspiring Mac developer wishes to step up to the plate to develop an AVFoundation gui with python bindings, pull requests are welcome.
-
+- [ ] Convert to Qt5
+- [ ] Convert from MLT to VideoPy
 - [ ] Convert to python3
+
+- [ ] arg parser for command line
+- [ ] Vimeo authentication
+
+### Medium Priority
+
+- [ ] Give users the option to select normalize / level audio signal automatically
+- [ ] Settings window - a settings file (.radcast) is created and used for settings. When project is more mature, a settings window can be built.
+- [ ] Window that shows current keybindings
+- [ ] First run displays settings configuration if settings file is not present
+- [ ] Basic editing functionality / template builder
+- [ ] Workflow builder - after encode, upload to vimeo, and/or youtube, and/or update podcast xml feed
+
+### Someday
+
+- [ ] Save/load edit templates end remember last used by default
+- [x] Hide main frame until a file is chosen
+- [x] Fix keybindings so they work consistently
