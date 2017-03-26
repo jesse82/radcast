@@ -4,6 +4,7 @@
 
 import os
 import Tkinter as tk
+import tkFont
 import ttk
 import tkFileDialog
 import tkMessageBox
@@ -485,6 +486,21 @@ class Application(tk.Frame):
 root = tk.Tk()
 root.title("Radcast")
 root.geometry("600x700")
+
+
+# DPI scale
+MM_TO_IN = 1/25.4
+pxw = root.winfo_screenwidth()
+inw = root.winfo_screenmmwidth() * MM_TO_IN
+dpi = pxw/inw
+# set DPI and defaut font
+root.tk.call('tk', 'scaling', dpi/72)
+default_font = tkFont.nametofont("TkDefaultFont") #this gets one of the default fonts
+fixed_font = tkFont.nametofont('TkFixedFont')
+default_font.configure(size=12)
+fixed_font.configure(size=22)
+root.option_add("*Font", default_font) # this applies it to all default font types (there are serveral)
+root.option_add("TkFixedFont", fixed_font) 
 
 Application(root).pack(side="top", fill="both", expand=True)
 
