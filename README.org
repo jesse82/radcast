@@ -41,7 +41,7 @@ Radcast was created to save hours of podcast encode and upload time by automatio
 
 ** Contribution
 
-   Pull requests are welcome. If bugs are found, please feel free to open an issue.
+   Pull requests are welcome. If bugs are found, please feel free to open an [[issue]].
 
    To assist in the development of Radcast, the following should help you get started:
 
@@ -54,6 +54,5 @@ Radcast was created to save hours of podcast encode and upload time by automatio
    #+BEGIN_EXAMPLE
    sudo apt-get install python3-pyqt5 python3-pyqt5-dbg python3-pyqt5.qtmultimedia python3-pyqt5.qtmultimedia-dbg
    #+END_EXAMPLE
-
 
    Note: Although some of these packages are optional, the =qtmultimedia5-examples= is particularly needed; otherwise a =no service found for - "org.qt-project.qt.mediaplayer"= message will appear at runtime.
