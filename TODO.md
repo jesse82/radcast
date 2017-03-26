@@ -17,6 +17,7 @@
 - [ ] First run displays settings configuration if settings file is not present
 - [ ] Basic editing functionality / template builder
 - [ ] Workflow builder - after encode, upload to vimeo, and/or youtube, and/or update podcast xml feed
+- [ ] Write unit tests and add constant integration / constant delivery hooks
 
 ### Someday
 
