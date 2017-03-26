@@ -41,7 +41,7 @@ Radcast was created to save hours of podcast encode and upload time by automatio
 
 ** Contribution
 
-   Pull requests are welcome. If bugs are found, please feel free to open an [[issue]].
+   Pull requests are welcome. If bugs are found, please feel free to open an [[issues][issue]].
 
    To assist in the development of Radcast, the following should help you get started:
 
